@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Check } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 import Particles from "@/components/Particles";
 
 const Signup = () => {
@@ -13,6 +14,7 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const passwordRequirements = [
     { text: "At least 8 characters", met: password.length >= 8 },
@@ -27,6 +29,7 @@ const Signup = () => {
     // Simulate signup
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
+    login(email, name);
     toast.success("Account created successfully!");
     setIsLoading(false);
     navigate("/dashboard");
@@ -36,7 +39,7 @@ const Signup = () => {
     <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden py-12">
       <Particles quantity={60} color="139, 92, 246" />
       {/* Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
           className="absolute top-1/4 right-1/4 w-96 h-96 rounded-full bg-primary/10 blur-3xl"
           animate={{

@@ -139,8 +139,12 @@
 
   .glass-card {
     @apply backdrop-blur-lg rounded-2xl border border-border/30;
-    background: hsl(0 0% 100% / 0.7);
+    background: hsl(var(--card) / 0.8);
     box-shadow: var(--shadow-md);
+  }
+
+  .dark .glass-card {
+    background: hsl(var(--card) / 0.6);
   }
 
   .shadow-glow {
