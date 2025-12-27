@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 import Particles from "@/components/Particles";
 
 const Login = () => {
@@ -12,6 +13,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,7 +21,8 @@ const Login = () => {
 
     // Simulate login
     await new Promise((resolve) => setTimeout(resolve, 1500));
-    
+
+    login(email);
     toast.success("Welcome back!");
     setIsLoading(false);
     navigate("/dashboard");
@@ -29,7 +32,7 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden">
       <Particles quantity={60} color="139, 92, 246" />
       {/* Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
           className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-primary/10 blur-3xl"
           animate={{

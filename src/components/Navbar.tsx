@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "./ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import {
   ChevronDown,
   Menu,
@@ -10,13 +12,22 @@ import {
   FileText,
   LogIn,
   UserPlus,
+  Sun,
+  Moon,
+  User,
+  LogOut,
+  Settings,
+  Upload,
 } from "lucide-react";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isHomeDropdownOpen, setIsHomeDropdownOpen] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, isAuthenticated, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -34,6 +45,12 @@ const Navbar = () => {
     { name: "Q&A", path: "/qa" },
     { name: "Ratings", path: "/ratings" },
   ];
+
+  const handleLogout = () => {
+    logout();
+    setIsProfileDropdownOpen(false);
+    navigate("/dashboard");
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 px-4 py-3">
@@ -111,41 +128,148 @@ const Navbar = () => {
                 )}
               </div>
             ))}
+
+            {/* Upload Resume Link */}
+            <Link
+              to="/upload"
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1 ${
+                isActive("/upload")
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+              }`}
+            >
+              <Upload className="w-4 h-4" />
+              Upload Resume
+            </Link>
           </div>
 
-          {/* Auth Buttons */}
+          {/* Right Section */}
           <div className="hidden md:flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/login")}
-              className="gap-2"
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-lg hover:bg-secondary transition-colors"
+              aria-label="Toggle theme"
             >
-              <LogIn className="w-4 h-4" />
-              Login
-            </Button>
-            <Button
-              variant="gradient"
-              size="sm"
-              onClick={() => navigate("/signup")}
-              className="gap-2"
-            >
-              <UserPlus className="w-4 h-4" />
-              Sign Up
-            </Button>
+              {theme === "light" ? (
+                <Moon className="w-5 h-5 text-muted-foreground hover:text-foreground" />
+              ) : (
+                <Sun className="w-5 h-5 text-muted-foreground hover:text-foreground" />
+              )}
+            </button>
+
+            {isAuthenticated && user ? (
+              /* Profile Dropdown */
+              <div
+                className="relative"
+                onMouseEnter={() => setIsProfileDropdownOpen(true)}
+                onMouseLeave={() => setIsProfileDropdownOpen(false)}
+              >
+                <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-secondary transition-colors">
+                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                    {user.avatar ? (
+                      <img
+                        src={user.avatar}
+                        alt={user.name}
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-4 h-4 text-primary" />
+                    )}
+                  </div>
+                  <span className="text-sm font-medium text-foreground">
+                    {user.name}
+                  </span>
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                </button>
+
+                <AnimatePresence>
+                  {isProfileDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute top-full right-0 mt-2 w-56 glass-card p-2 shadow-lg"
+                    >
+                      <div className="px-4 py-3 border-b border-border mb-2">
+                        <p className="font-medium text-foreground">{user.name}</p>
+                        <p className="text-sm text-muted-foreground">{user.email}</p>
+                      </div>
+                      <Link
+                        to="/profile"
+                        className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                      >
+                        <User className="w-4 h-4" />
+                        View Profile
+                      </Link>
+                      <Link
+                        to="/settings"
+                        className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                      >
+                        <Settings className="w-4 h-4" />
+                        Settings
+                      </Link>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Logout
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ) : (
+              /* Auth Buttons */
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate("/login")}
+                  className="gap-2"
+                >
+                  <LogIn className="w-4 h-4" />
+                  Login
+                </Button>
+                <Button
+                  variant="gradient"
+                  size="sm"
+                  onClick={() => navigate("/signup")}
+                  className="gap-2"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  Sign Up
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
-          <button
-            className="md:hidden p-2 rounded-lg hover:bg-secondary transition-colors"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-          >
-            {isMenuOpen ? (
-              <X className="w-6 h-6" />
-            ) : (
-              <Menu className="w-6 h-6" />
-            )}
-          </button>
+          <div className="flex md:hidden items-center gap-2">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-lg hover:bg-secondary transition-colors"
+              aria-label="Toggle theme"
+            >
+              {theme === "light" ? (
+                <Moon className="w-5 h-5" />
+              ) : (
+                <Sun className="w-5 h-5" />
+              )}
+            </button>
+            <button
+              className="p-2 rounded-lg hover:bg-secondary transition-colors"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              {isMenuOpen ? (
+                <X className="w-6 h-6" />
+              ) : (
+                <Menu className="w-6 h-6" />
+              )}
+            </button>
+          </div>
         </motion.div>
 
         {/* Mobile Menu */}
@@ -157,6 +281,20 @@ const Navbar = () => {
               exit={{ opacity: 0, height: 0 }}
               className="md:hidden mt-2 glass-card p-4 overflow-hidden"
             >
+              {isAuthenticated && user && (
+                <div className="px-4 py-3 mb-4 rounded-lg bg-secondary/50">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                      <User className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">{user.name}</p>
+                      <p className="text-sm text-muted-foreground">{user.email}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {navItems.map((item) => (
                 <div key={item.name}>
                   <Link
@@ -180,27 +318,53 @@ const Navbar = () => {
                     ))}
                 </div>
               ))}
-              <div className="mt-4 pt-4 border-t border-border flex gap-3">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => {
-                    navigate("/login");
-                    setIsMenuOpen(false);
-                  }}
-                >
-                  Login
-                </Button>
-                <Button
-                  variant="gradient"
-                  className="flex-1"
-                  onClick={() => {
-                    navigate("/signup");
-                    setIsMenuOpen(false);
-                  }}
-                >
-                  Sign Up
-                </Button>
+
+              <Link
+                to="/upload"
+                className="flex items-center gap-3 px-4 py-3 rounded-lg text-foreground hover:bg-secondary transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <Upload className="w-4 h-4 text-primary" />
+                Upload Resume
+              </Link>
+
+              <div className="mt-4 pt-4 border-t border-border">
+                {isAuthenticated ? (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      handleLogout();
+                      setIsMenuOpen(false);
+                    }}
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Logout
+                  </Button>
+                ) : (
+                  <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => {
+                        navigate("/login");
+                        setIsMenuOpen(false);
+                      }}
+                    >
+                      Login
+                    </Button>
+                    <Button
+                      variant="gradient"
+                      className="flex-1"
+                      onClick={() => {
+                        navigate("/signup");
+                        setIsMenuOpen(false);
+                      }}
+                    >
+                      Sign Up
+                    </Button>
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
