@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { ArrowRight, Sparkles } from "lucide-react";
-
+import Particles from "./Particles";
 const LandingPage = () => {
   const navigate = useNavigate();
 
@@ -12,8 +12,10 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-background">
+      <Particles quantity={80} color="139, 92, 246" />
+      
       {/* Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
           className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-primary/10 blur-3xl"
           animate={{
