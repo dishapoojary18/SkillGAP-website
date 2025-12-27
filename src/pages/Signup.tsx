@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Check } from "lucide-react";
 import { toast } from "sonner";
+import Particles from "@/components/Particles";
 
 const Signup = () => {
   const [name, setName] = useState("");
@@ -33,6 +34,7 @@ const Signup = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden py-12">
+      <Particles quantity={60} color="139, 92, 246" />
       {/* Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
         <motion.div
