@@ -37,6 +37,29 @@ interface NotificationPreferences {
   email_internship_alerts: boolean;
 }
 
+type SkillGapItem =
+  | string
+  | {
+      skill?: unknown;
+      importance?: unknown;
+      description?: unknown;
+    };
+
+const getSkillGapLabels = (skillGaps: unknown): string[] => {
+  if (!Array.isArray(skillGaps)) return [];
+
+  return (skillGaps as SkillGapItem[])
+    .map((item) => {
+      if (typeof item === "string") return item;
+      if (item && typeof item === "object" && typeof (item as any).skill === "string") {
+        return (item as any).skill as string;
+      }
+      return null;
+    })
+    .filter((v): v is string => typeof v === "string" && v.trim().length > 0);
+};
+
+
 const Profile = () => {
   const { user, profile, isLoading: authLoading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -423,26 +446,29 @@ const Profile = () => {
                         </div>
                       </div>
                       
-                      {Array.isArray(analysis.skill_gaps) && analysis.skill_gaps.length > 0 && (
+                      {getSkillGapLabels(analysis.skill_gaps).length > 0 && (
                         <div className="mb-3">
                           <p className="text-sm text-muted-foreground mb-2 flex items-center gap-1">
                             <TrendingUp className="h-3 w-3" />
                             Skill Gaps Identified:
                           </p>
                           <div className="flex flex-wrap gap-1">
-                            {(analysis.skill_gaps as string[]).slice(0, 5).map((skill, idx) => (
-                              <Badge key={idx} variant="secondary" className="text-xs">
-                                {skill}
-                              </Badge>
-                            ))}
-                            {(analysis.skill_gaps as string[]).length > 5 && (
+                            {getSkillGapLabels(analysis.skill_gaps)
+                              .slice(0, 5)
+                              .map((skill, idx) => (
+                                <Badge key={idx} variant="secondary" className="text-xs">
+                                  {skill}
+                                </Badge>
+                              ))}
+                            {getSkillGapLabels(analysis.skill_gaps).length > 5 && (
                               <Badge variant="outline" className="text-xs">
-                                +{(analysis.skill_gaps as string[]).length - 5} more
+                                +{getSkillGapLabels(analysis.skill_gaps).length - 5} more
                               </Badge>
                             )}
                           </div>
                         </div>
                       )}
+
 
                       {Array.isArray(analysis.recommended_courses) && analysis.recommended_courses.length > 0 && (
                         <div>
