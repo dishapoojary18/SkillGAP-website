@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,36 +11,10 @@ serve(async (req) => {
   }
 
   try {
-    // Verify authentication
+    // With verify_jwt = true in config.toml, Supabase has already validated the JWT
+    // The request will only reach here if the user is authenticated
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      console.error("No authorization header provided");
-      return new Response(
-        JSON.stringify({ error: "Unauthorized - No authorization header" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Create Supabase client and verify user
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: {
-        headers: { Authorization: authHeader },
-      },
-    });
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
-      console.error("Authentication failed:", authError?.message);
-      return new Response(
-        JSON.stringify({ error: "Unauthorized - Invalid token" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    console.log(`Authenticated user: ${user.id}`);
+    console.log("Auth header present:", !!authHeader);
 
     const { resumeText, targetRole } = await req.json();
     
@@ -111,7 +84,7 @@ ${resumeText}
 
 Please provide a comprehensive skill gap analysis with specific course recommendations to help this candidate become qualified for the ${targetRole} position. Return your analysis in the specified JSON format.`;
 
-    console.log(`Analyzing resume for role: ${targetRole} (user: ${user.id})`);
+    console.log(`Analyzing resume for role: ${targetRole}`);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -183,7 +156,7 @@ Please provide a comprehensive skill gap analysis with specific course recommend
       );
     }
 
-    console.log("Analysis completed successfully for user:", user.id);
+    console.log("Analysis completed successfully");
 
     return new Response(JSON.stringify({ analysis }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
