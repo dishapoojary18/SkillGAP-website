@@ -134,7 +134,11 @@ const Profile = () => {
             ) : (
               <div className="space-y-4">
                 {analyses.map((analysis) => (
-                  <Card key={analysis.id} className="bg-muted/50">
+                  <Card 
+                    key={analysis.id} 
+                    className="bg-muted/50 cursor-pointer hover:bg-muted/70 transition-colors"
+                    onClick={() => navigate(`/analysis?id=${analysis.id}`)}
+                  >
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-2">

@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { useLocation } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import SkillGapCard from "@/components/SkillGapCard";
 import CourseCard from "@/components/CourseCard";
 import InternshipCard from "@/components/InternshipCard";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   ArrowRight,
   Download,
@@ -119,15 +121,72 @@ const matchingInternships = [
 const Analysis = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<"skills" | "courses" | "internships">("skills");
+  const [loading, setLoading] = useState(false);
+  const [fetchedAnalysis, setFetchedAnalysis] = useState<AnalysisResult | null>(null);
+  const [fetchedRole, setFetchedRole] = useState<string | null>(null);
 
-  // Get analysis data from navigation state
-  const analysisData = location.state?.analysis as AnalysisResult | undefined;
-  const targetRole = location.state?.role || "Frontend Developer";
+  const analysisId = searchParams.get("id");
+
+  // Fetch analysis from database if ID is provided
+  useEffect(() => {
+    const fetchAnalysis = async () => {
+      if (!analysisId) return;
+      
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("resume_analyses")
+        .select("*")
+        .eq("id", analysisId)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Error fetching analysis:", error);
+      } else if (data) {
+        setFetchedRole(data.role);
+        
+        // Transform stored data to AnalysisResult format
+        const skillGaps = Array.isArray(data.skill_gaps) 
+          ? (data.skill_gaps as Array<{ skill: string; importance: string; description?: string }>).map(sg => ({
+              skill: sg.skill || String(sg),
+              importance: (sg.importance as "critical" | "important" | "nice-to-have") || "important",
+              description: sg.description || "",
+            }))
+          : [];
+        
+        const recommendedCourses = Array.isArray(data.recommended_courses)
+          ? (data.recommended_courses as Array<{ title: string; platform?: string; provider?: string; skill?: string; estimatedDuration?: string; priority?: string }>).map(rc => ({
+              title: rc.title,
+              platform: rc.platform || rc.provider || "Online",
+              skill: rc.skill || "",
+              estimatedDuration: rc.estimatedDuration || "Self-paced",
+              priority: (rc.priority as "high" | "medium" | "low") || "medium",
+            }))
+          : [];
+
+        setFetchedAnalysis({
+          summary: `Analysis for ${data.role} role`,
+          matchScore: 70,
+          skillGaps,
+          existingStrengths: [],
+          recommendedCourses,
+          actionPlan: [],
+        });
+      }
+      setLoading(false);
+    };
+
+    fetchAnalysis();
+  }, [analysisId]);
+
+  // Get analysis data from navigation state or fetched data
+  const analysisData = fetchedAnalysis || (location.state?.analysis as AnalysisResult | undefined);
+  const targetRole = fetchedRole || location.state?.role || "Frontend Developer";
   const fileName = location.state?.fileName;
 
   // Transform AI analysis data to component format
-  const skillGaps = analysisData?.skillGaps?.map((gap, index) => ({
+  const skillGaps = analysisData?.skillGaps?.map((gap) => ({
     skill: gap.skill,
     currentLevel: gap.importance === "critical" ? 1 : gap.importance === "important" ? 2 : 3,
     requiredLevel: 4,
@@ -148,6 +207,24 @@ const Analysis = () => {
   const overallScore = analysisData?.matchScore || 65;
   const highPriorityCount = skillGaps.filter((s) => s.priority === "high").length;
   const mediumPriorityCount = skillGaps.filter((s) => s.priority === "medium").length;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="pt-28 pb-16 px-4 max-w-6xl mx-auto">
+          <Skeleton className="h-10 w-64 mb-4" />
+          <Skeleton className="h-6 w-48 mb-8" />
+          <div className="grid md:grid-cols-4 gap-4 mb-8">
+            <Skeleton className="h-32 md:col-span-2" />
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+          </div>
+          <Skeleton className="h-64 w-full" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
