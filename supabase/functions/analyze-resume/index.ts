@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,13 +12,37 @@ serve(async (req) => {
   }
 
   try {
-    // With verify_jwt = true in config.toml, Supabase has already validated the JWT
-    // The request will only reach here if the user is authenticated
-    const authHeader = req.headers.get('Authorization');
-    console.log("Auth header present:", !!authHeader);
+    // Manual authentication check (verify_jwt = false in config)
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      console.error("Missing or invalid Authorization header");
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - please log in" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Verify the token using Supabase Auth
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      console.error("Token validation failed:", authError?.message || "No user returned");
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - invalid or expired session" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log(`Authenticated user: ${user.id}`);
 
     const { resumeText, targetRole } = await req.json();
-    
+
     if (!resumeText || !targetRole) {
       return new Response(
         JSON.stringify({ error: "Resume text and target role are required" }),
@@ -84,7 +109,7 @@ ${resumeText}
 
 Please provide a comprehensive skill gap analysis with specific course recommendations to help this candidate become qualified for the ${targetRole} position. Return your analysis in the specified JSON format.`;
 
-    console.log(`Analyzing resume for role: ${targetRole}`);
+    console.log(`Analyzing resume for role: ${targetRole} (user: ${user.id})`);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -104,7 +129,7 @@ Please provide a comprehensive skill gap analysis with specific course recommend
     if (!response.ok) {
       const errorText = await response.text();
       console.error("AI gateway error:", response.status, errorText);
-      
+
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
@@ -117,7 +142,7 @@ Please provide a comprehensive skill gap analysis with specific course recommend
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      
+
       return new Response(
         JSON.stringify({ error: "Failed to analyze resume. Please try again." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -138,30 +163,27 @@ Please provide a comprehensive skill gap analysis with specific course recommend
     // Parse the JSON from the response
     let analysis;
     try {
-      // Try to extract JSON from the response (it might be wrapped in markdown code blocks)
       const jsonMatch = analysisText.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, analysisText];
       const jsonString = jsonMatch[1] || analysisText;
       analysis = JSON.parse(jsonString.trim());
     } catch (parseError) {
       console.error("Failed to parse AI response as JSON:", parseError);
       console.log("Raw response:", analysisText);
-      
-      // Return a structured error with the raw text
+
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: "Failed to parse analysis results",
-          rawAnalysis: analysisText 
+          rawAnalysis: analysisText,
         }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log("Analysis completed successfully");
+    console.log("Analysis completed successfully for user:", user.id);
 
     return new Response(JSON.stringify({ analysis }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-
   } catch (error) {
     console.error("Error in analyze-resume function:", error);
     return new Response(
