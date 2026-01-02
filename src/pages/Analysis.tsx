@@ -52,6 +52,21 @@ const defaultSkillGaps: SkillGap[] = [
   { skill: "CSS/Tailwind", importance: "nice-to-have", description: "Styling frameworks" },
 ];
 
+// Helper to generate platform search URLs
+const getPlatformSearchUrl = (platform: string, query: string): string => {
+  const encodedQuery = encodeURIComponent(query);
+  const platformUrls: Record<string, string> = {
+    "Udemy": `https://www.udemy.com/courses/search/?q=${encodedQuery}`,
+    "Coursera": `https://www.coursera.org/search?query=${encodedQuery}`,
+    "LinkedIn Learning": `https://www.linkedin.com/learning/search?keywords=${encodedQuery}`,
+    "edX": `https://www.edx.org/search?q=${encodedQuery}`,
+    "Pluralsight": `https://www.pluralsight.com/search?q=${encodedQuery}`,
+    "Skillshare": `https://www.skillshare.com/en/search?query=${encodedQuery}`,
+    "Udacity": `https://www.udacity.com/courses/all?search=${encodedQuery}`,
+  };
+  return platformUrls[platform] || `https://www.google.com/search?q=${encodedQuery}+online+course`;
+};
+
 const defaultCourses = [
   {
     title: "React - The Complete Guide 2024",
@@ -59,8 +74,8 @@ const defaultCourses = [
     rating: 4.8,
     duration: "40 hours",
     students: "500K+",
-    image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400&h=200&fit=crop",
-    url: "https://udemy.com",
+    image: "",
+    url: "https://www.udemy.com/courses/search/?q=react+complete+guide",
     skill: "React.js",
   },
   {
@@ -69,8 +84,8 @@ const defaultCourses = [
     rating: 4.7,
     duration: "25 hours",
     students: "200K+",
-    image: "https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=400&h=200&fit=crop",
-    url: "https://coursera.org",
+    image: "",
+    url: "https://www.coursera.org/search?query=typescript",
     skill: "TypeScript",
   },
   {
@@ -79,8 +94,8 @@ const defaultCourses = [
     rating: 4.9,
     duration: "35 hours",
     students: "300K+",
-    image: "https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=400&h=200&fit=crop",
-    url: "https://udemy.com",
+    image: "",
+    url: "https://www.udemy.com/courses/search/?q=nodejs+bootcamp",
     skill: "Node.js",
   },
   {
@@ -89,8 +104,8 @@ const defaultCourses = [
     rating: 4.6,
     duration: "15 hours",
     students: "150K+",
-    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=200&fit=crop",
-    url: "https://linkedin.com/learning",
+    image: "",
+    url: "https://www.linkedin.com/learning/search?keywords=system+design",
     skill: "System Design",
   },
 ];
@@ -201,8 +216,8 @@ const Analysis = () => {
     rating: 4.5 + Math.random() * 0.4,
     duration: course.estimatedDuration,
     students: "100K+",
-    image: `https://images.unsplash.com/photo-${1633356122544 + Math.floor(Math.random() * 1000)}-f134324a6cee?w=400&h=200&fit=crop`,
-    url: "#",
+    image: "",
+    url: getPlatformSearchUrl(course.platform, course.title),
     skill: course.skill,
   })) || defaultCourses;
 
