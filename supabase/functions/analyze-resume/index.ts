@@ -23,13 +23,24 @@ serve(async (req) => {
     }
 
     // Verify the token using Supabase Auth
+    const token = authHeader.slice("Bearer ".length).trim();
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+    // IMPORTANT: In edge functions there is no browser session storage, so getUser() must be called with the JWT.
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+      global: { headers: { Authorization: `Bearer ${token}` } },
     });
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser(token);
 
     if (authError || !user) {
       console.error("Token validation failed:", authError?.message || "No user returned");
