@@ -98,6 +98,12 @@ const ResumeUpload = ({ onUpload, selectedRole }: ResumeUploadProps) => {
       return;
     }
 
+    if (!user) {
+      toast.error("Please log in to analyze your resume");
+      navigate("/login");
+      return;
+    }
+
     setIsUploading(true);
 
     try {
