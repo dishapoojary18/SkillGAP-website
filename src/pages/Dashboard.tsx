@@ -144,7 +144,7 @@ const Dashboard = () => {
               <p className="text-muted-foreground mb-6">
                 We support PDF, DOC, and DOCX formats up to 5MB
               </p>
-              <ResumeUpload onUpload={handleFileUpload} />
+              <ResumeUpload onUpload={handleFileUpload} selectedRole={selectedRole} />
             </motion.div>
 
             {/* Role Selector */}

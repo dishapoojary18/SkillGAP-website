@@ -4,16 +4,21 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Upload, FileText, X, CheckCircle, Loader2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ResumeUploadProps {
   onUpload: (file: File) => void;
+  selectedRole: string | null;
 }
 
-const ResumeUpload = ({ onUpload }: ResumeUploadProps) => {
+const ResumeUpload = ({ onUpload, selectedRole }: ResumeUploadProps) => {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isUploaded, setIsUploaded] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
@@ -29,25 +34,99 @@ const ResumeUpload = ({ onUpload }: ResumeUploadProps) => {
       "application/msword": [".doc"],
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
         [".docx"],
+      "text/plain": [".txt"],
     },
     maxFiles: 1,
     maxSize: 5 * 1024 * 1024, // 5MB
   });
 
+  const extractTextFromFile = async (file: File): Promise<string> => {
+    // For text files, read directly
+    if (file.type === "text/plain") {
+      return await file.text();
+    }
+    
+    // For PDF/DOC files, we'll read as text (simplified - in production you'd use a PDF parser)
+    // For now, we'll read the file as text and let the AI handle it
+    try {
+      const text = await file.text();
+      return text;
+    } catch {
+      // If text extraction fails, return placeholder
+      return `[Resume file: ${file.name}]`;
+    }
+  };
+
   const handleAnalyze = async () => {
-    if (!file) return;
+    if (!file || !selectedRole) {
+      toast.error("Please select a role and upload a resume");
+      return;
+    }
 
     setIsUploading(true);
-    // Simulate upload delay
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setIsUploading(false);
-    setIsUploaded(true);
-    onUpload(file);
 
-    // Navigate to analysis after a short delay
-    setTimeout(() => {
-      navigate("/analysis");
-    }, 500);
+    try {
+      // Extract text from file
+      const resumeText = await extractTextFromFile(file);
+
+      // Call the edge function
+      const { data, error } = await supabase.functions.invoke("analyze-resume", {
+        body: { 
+          resumeText,
+          targetRole: selectedRole 
+        },
+      });
+
+      if (error) {
+        console.error("Analysis error:", error);
+        toast.error(error.message || "Failed to analyze resume");
+        setIsUploading(false);
+        return;
+      }
+
+      if (data?.error) {
+        toast.error(data.error);
+        setIsUploading(false);
+        return;
+      }
+
+      // Save analysis to database if user is logged in
+      if (user && data?.analysis) {
+        const { error: saveError } = await supabase
+          .from("resume_analyses")
+          .insert({
+            user_id: user.id,
+            role: selectedRole,
+            resume_text: resumeText.substring(0, 10000), // Limit stored text
+            skill_gaps: data.analysis.skillGaps || [],
+            recommended_courses: data.analysis.recommendedCourses || [],
+          });
+
+        if (saveError) {
+          console.error("Failed to save analysis:", saveError);
+        }
+      }
+
+      setIsUploading(false);
+      setIsUploaded(true);
+      onUpload(file);
+
+      // Navigate to analysis with the results
+      setTimeout(() => {
+        navigate("/analysis", { 
+          state: { 
+            analysis: data.analysis,
+            role: selectedRole,
+            fileName: file.name
+          } 
+        });
+      }, 500);
+
+    } catch (error) {
+      console.error("Error analyzing resume:", error);
+      toast.error("An error occurred while analyzing your resume");
+      setIsUploading(false);
+    }
   };
 
   const removeFile = () => {
@@ -102,7 +181,7 @@ const ResumeUpload = ({ onUpload }: ResumeUploadProps) => {
                       : "Drag & drop your resume"}
                   </p>
                   <p className="text-sm text-muted-foreground mt-2">
-                    or click to browse (PDF, DOC, DOCX - max 5MB)
+                    or click to browse (PDF, DOC, DOCX, TXT - max 5MB)
                   </p>
                 </div>
               </motion.div>
@@ -147,7 +226,7 @@ const ResumeUpload = ({ onUpload }: ResumeUploadProps) => {
                   >
                     <CheckCircle className="w-5 h-5" />
                     <span className="text-sm font-medium">
-                      Upload complete! Redirecting...
+                      Analysis complete! Redirecting...
                     </span>
                   </motion.div>
                 )}
@@ -174,18 +253,23 @@ const ResumeUpload = ({ onUpload }: ResumeUploadProps) => {
               variant="hero"
               size="lg"
               onClick={handleAnalyze}
-              disabled={isUploading}
+              disabled={isUploading || !selectedRole}
               className="min-w-[200px]"
             >
               {isUploading ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Analyzing...
+                  Analyzing with AI...
                 </>
               ) : (
                 "Analyze Resume"
               )}
             </Button>
+            {!selectedRole && (
+              <p className="text-sm text-muted-foreground mt-2">
+                Please select a target role first
+              </p>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import SkillGapCard from "@/components/SkillGapCard";
 import CourseCard from "@/components/CourseCard";
@@ -9,13 +10,38 @@ import {
   ArrowRight,
   Download,
   Share2,
-  CheckCircle,
   AlertTriangle,
   TrendingUp,
+  FileText,
+  Sparkles,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-const skillGaps = [
+interface SkillGap {
+  skill: string;
+  importance: "critical" | "important" | "nice-to-have";
+  description: string;
+}
+
+interface RecommendedCourse {
+  title: string;
+  platform: string;
+  skill: string;
+  estimatedDuration: string;
+  priority: "high" | "medium" | "low";
+}
+
+interface AnalysisResult {
+  summary: string;
+  matchScore: number;
+  skillGaps: SkillGap[];
+  existingStrengths: Array<{ skill: string; relevance: string }>;
+  recommendedCourses: RecommendedCourse[];
+  actionPlan: Array<{ step: number; action: string; timeframe: string }>;
+}
+
+// Default fallback data
+const defaultSkillGaps = [
   { skill: "React.js", currentLevel: 2, requiredLevel: 4, priority: "high" as const },
   { skill: "TypeScript", currentLevel: 1, requiredLevel: 4, priority: "high" as const },
   { skill: "Node.js", currentLevel: 2, requiredLevel: 3, priority: "medium" as const },
@@ -24,7 +50,7 @@ const skillGaps = [
   { skill: "CSS/Tailwind", currentLevel: 3, requiredLevel: 4, priority: "low" as const },
 ];
 
-const recommendedCourses = [
+const defaultCourses = [
   {
     title: "React - The Complete Guide 2024",
     provider: "Udemy",
@@ -92,9 +118,34 @@ const matchingInternships = [
 
 const Analysis = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState<"skills" | "courses" | "internships">("skills");
 
-  const overallScore = 65;
+  // Get analysis data from navigation state
+  const analysisData = location.state?.analysis as AnalysisResult | undefined;
+  const targetRole = location.state?.role || "Frontend Developer";
+  const fileName = location.state?.fileName;
+
+  // Transform AI analysis data to component format
+  const skillGaps = analysisData?.skillGaps?.map((gap, index) => ({
+    skill: gap.skill,
+    currentLevel: gap.importance === "critical" ? 1 : gap.importance === "important" ? 2 : 3,
+    requiredLevel: 4,
+    priority: gap.importance === "critical" ? "high" as const : gap.importance === "important" ? "medium" as const : "low" as const,
+  })) || defaultSkillGaps;
+
+  const recommendedCourses = analysisData?.recommendedCourses?.map((course) => ({
+    title: course.title,
+    provider: course.platform,
+    rating: 4.5 + Math.random() * 0.4,
+    duration: course.estimatedDuration,
+    students: "100K+",
+    image: `https://images.unsplash.com/photo-${1633356122544 + Math.floor(Math.random() * 1000)}-f134324a6cee?w=400&h=200&fit=crop`,
+    url: "#",
+    skill: course.skill,
+  })) || defaultCourses;
+
+  const overallScore = analysisData?.matchScore || 65;
   const highPriorityCount = skillGaps.filter((s) => s.priority === "high").length;
   const mediumPriorityCount = skillGaps.filter((s) => s.priority === "medium").length;
 
@@ -112,15 +163,25 @@ const Analysis = () => {
           >
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                  <span className="text-sm text-primary font-medium">AI Analysis Complete</span>
+                </div>
                 <h1 className="text-3xl font-display font-bold text-foreground mb-2">
                   Your Analysis Results
                 </h1>
                 <p className="text-muted-foreground">
                   Based on your resume for{" "}
                   <span className="text-primary font-medium">
-                    Frontend Developer
+                    {targetRole}
                   </span>{" "}
                   role
+                  {fileName && (
+                    <span className="flex items-center gap-1 mt-1 text-sm">
+                      <FileText className="w-4 h-4" />
+                      {fileName}
+                    </span>
+                  )}
                 </p>
               </div>
               <div className="flex gap-3">
@@ -135,6 +196,19 @@ const Analysis = () => {
               </div>
             </div>
           </motion.div>
+
+          {/* Summary Card */}
+          {analysisData?.summary && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 }}
+              className="glass-card p-6 mb-6"
+            >
+              <h3 className="font-semibold text-foreground mb-2">Summary</h3>
+              <p className="text-muted-foreground">{analysisData.summary}</p>
+            </motion.div>
+          )}
 
           {/* Score Overview */}
           <motion.div
@@ -181,8 +255,7 @@ const Analysis = () => {
                     Profile Match Score
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    Your skills match 65% of the requirements for Frontend
-                    Developer
+                    Your skills match {overallScore}% of the requirements for {targetRole}
                   </p>
                 </div>
               </div>
@@ -212,6 +285,28 @@ const Analysis = () => {
               </p>
             </div>
           </motion.div>
+
+          {/* Existing Strengths */}
+          {analysisData?.existingStrengths && analysisData.existingStrengths.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="glass-card p-6 mb-8"
+            >
+              <h3 className="font-semibold text-foreground mb-4">Your Strengths</h3>
+              <div className="flex flex-wrap gap-3">
+                {analysisData.existingStrengths.map((strength, index) => (
+                  <div
+                    key={index}
+                    className="px-4 py-2 rounded-full bg-primary/10 border border-primary/20"
+                  >
+                    <span className="text-sm font-medium text-primary">{strength.skill}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
 
           {/* Tabs */}
           <motion.div
@@ -262,7 +357,7 @@ const Analysis = () => {
                 </p>
                 <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
                   {recommendedCourses.map((course, index) => (
-                    <CourseCard key={course.title} {...course} index={index} />
+                    <CourseCard key={course.title + index} {...course} index={index} />
                   ))}
                 </div>
                 <div className="text-center">
@@ -301,6 +396,31 @@ const Analysis = () => {
               </div>
             )}
           </motion.div>
+
+          {/* Action Plan */}
+          {analysisData?.actionPlan && analysisData.actionPlan.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="mt-8 glass-card p-6"
+            >
+              <h3 className="font-semibold text-foreground mb-4">Your Action Plan</h3>
+              <div className="space-y-4">
+                {analysisData.actionPlan.map((item) => (
+                  <div key={item.step} className="flex items-start gap-4">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm font-bold text-primary">{item.step}</span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">{item.action}</p>
+                      <p className="text-sm text-muted-foreground">{item.timeframe}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
         </div>
       </div>
     </div>
