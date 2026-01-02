@@ -42,14 +42,14 @@ interface AnalysisResult {
   actionPlan: Array<{ step: number; action: string; timeframe: string }>;
 }
 
-// Default fallback data
-const defaultSkillGaps = [
-  { skill: "React.js", currentLevel: 2, requiredLevel: 4, priority: "high" as const },
-  { skill: "TypeScript", currentLevel: 1, requiredLevel: 4, priority: "high" as const },
-  { skill: "Node.js", currentLevel: 2, requiredLevel: 3, priority: "medium" as const },
-  { skill: "System Design", currentLevel: 1, requiredLevel: 3, priority: "medium" as const },
-  { skill: "Git/GitHub", currentLevel: 3, requiredLevel: 4, priority: "low" as const },
-  { skill: "CSS/Tailwind", currentLevel: 3, requiredLevel: 4, priority: "low" as const },
+// Default fallback data - matching SkillGap interface
+const defaultSkillGaps: SkillGap[] = [
+  { skill: "React.js", importance: "critical", description: "Modern frontend framework" },
+  { skill: "TypeScript", importance: "critical", description: "Type-safe JavaScript" },
+  { skill: "Node.js", importance: "important", description: "Backend JavaScript runtime" },
+  { skill: "System Design", importance: "important", description: "Architecture patterns" },
+  { skill: "Git/GitHub", importance: "nice-to-have", description: "Version control" },
+  { skill: "CSS/Tailwind", importance: "nice-to-have", description: "Styling frameworks" },
 ];
 
 const defaultCourses = [
@@ -185,13 +185,15 @@ const Analysis = () => {
   const targetRole = fetchedRole || location.state?.role || "Frontend Developer";
   const fileName = location.state?.fileName;
 
-  // Transform AI analysis data to component format
-  const skillGaps = analysisData?.skillGaps?.map((gap) => ({
+  // Transform AI analysis data to component format (SkillGapCard format)
+  const transformSkillGap = (gap: SkillGap) => ({
     skill: gap.skill,
     currentLevel: gap.importance === "critical" ? 1 : gap.importance === "important" ? 2 : 3,
     requiredLevel: 4,
     priority: gap.importance === "critical" ? "high" as const : gap.importance === "important" ? "medium" as const : "low" as const,
-  })) || defaultSkillGaps;
+  });
+  
+  const skillGaps = (analysisData?.skillGaps || defaultSkillGaps).map(transformSkillGap);
 
   const recommendedCourses = analysisData?.recommendedCourses?.map((course) => ({
     title: course.title,
