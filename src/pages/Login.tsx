@@ -8,9 +8,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import Particles from "@/components/Particles";
 
 const Login = () => {
-  const [email, setEmail] = useState("");
+  // Load remembered email from localStorage
+  const rememberedEmail = localStorage.getItem("skillgap_remembered_email") || "";
+  
+  const [email, setEmail] = useState(rememberedEmail);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(!!rememberedEmail);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { signIn, isAuthenticated } = useAuth();
@@ -38,6 +42,13 @@ const Login = () => {
       }
       setIsLoading(false);
       return;
+    }
+
+    // Save or clear remembered email based on checkbox
+    if (rememberMe) {
+      localStorage.setItem("skillgap_remembered_email", email);
+    } else {
+      localStorage.removeItem("skillgap_remembered_email");
     }
 
     toast.success("Welcome back!");
@@ -145,6 +156,20 @@ const Login = () => {
                   )}
                 </button>
               </div>
+            </div>
+
+            {/* Remember Me */}
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="rememberMe"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-4 h-4 rounded border-border text-primary focus:ring-primary/20"
+              />
+              <label htmlFor="rememberMe" className="text-sm text-muted-foreground">
+                Remember my email
+              </label>
             </div>
 
             {/* Submit */}

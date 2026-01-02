@@ -1,12 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/Navbar";
 import ResumeUpload from "@/components/ResumeUpload";
 import RoleSelector from "@/components/RoleSelector";
 import InternshipCard from "@/components/InternshipCard";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles, Target, BookOpen, Briefcase } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent } from "@/components/ui/card";
+import { ArrowRight, Sparkles, Target, BookOpen, Briefcase, User } from "lucide-react";
 
 const sampleInternships = [
   {
@@ -45,9 +48,22 @@ const Dashboard = () => {
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const navigate = useNavigate();
+  const { user, profile, isAuthenticated, isLoading } = useAuth();
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      navigate("/login");
+    }
+  }, [isLoading, isAuthenticated, navigate]);
 
   const handleFileUpload = (file: File) => {
     setUploadedFile(file);
+  };
+
+  const getInitials = (name: string | null | undefined) => {
+    if (!name) return "U";
+    return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
   };
 
   return (
@@ -57,6 +73,44 @@ const Dashboard = () => {
       {/* Hero Section */}
       <section className="pt-28 pb-16 px-4">
         <div className="max-w-6xl mx-auto">
+          {/* Welcome Card for Logged In User */}
+          {isAuthenticated && profile && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-8"
+            >
+              <Card className="bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-14 w-14 border-2 border-primary/30">
+                      <AvatarImage src={profile.avatar_url || undefined} />
+                      <AvatarFallback className="bg-primary text-primary-foreground text-lg">
+                        {getInitials(profile.full_name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <h2 className="text-xl font-semibold text-foreground">
+                        Welcome back, {profile.full_name?.split(" ")[0] || "there"}! 👋
+                      </h2>
+                      <p className="text-muted-foreground">
+                        Ready to continue your career journey?
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate("/profile")}
+                      className="gap-2"
+                    >
+                      <User className="w-4 h-4" />
+                      View Profile
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
