@@ -3,12 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
@@ -17,7 +18,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { User, FileText, Calendar, Target, TrendingUp, Pencil, Camera, Loader2 } from "lucide-react";
+import { User, FileText, Calendar, Target, TrendingUp, Pencil, Camera, Loader2, Bell, Mail } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 
@@ -27,6 +28,13 @@ interface ResumeAnalysis {
   created_at: string;
   skill_gaps: unknown;
   recommended_courses: unknown;
+}
+
+interface NotificationPreferences {
+  email_analysis_complete: boolean;
+  email_weekly_summary: boolean;
+  email_course_recommendations: boolean;
+  email_internship_alerts: boolean;
 }
 
 const Profile = () => {
@@ -42,6 +50,14 @@ const Profile = () => {
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [localAvatarUrl, setLocalAvatarUrl] = useState<string | null>(null);
+  const [notifPrefs, setNotifPrefs] = useState<NotificationPreferences>({
+    email_analysis_complete: true,
+    email_weekly_summary: false,
+    email_course_recommendations: true,
+    email_internship_alerts: true,
+  });
+  const [notifLoading, setNotifLoading] = useState(true);
+  const [notifSaving, setNotifSaving] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -80,6 +96,75 @@ const Profile = () => {
       fetchAnalyses();
     }
   }, [user]);
+
+  useEffect(() => {
+    const fetchNotificationPrefs = async () => {
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("notification_preferences")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Error fetching notification preferences:", error);
+      } else if (data) {
+        setNotifPrefs({
+          email_analysis_complete: data.email_analysis_complete,
+          email_weekly_summary: data.email_weekly_summary,
+          email_course_recommendations: data.email_course_recommendations,
+          email_internship_alerts: data.email_internship_alerts,
+        });
+      }
+      setNotifLoading(false);
+    };
+
+    if (user) {
+      fetchNotificationPrefs();
+    }
+  }, [user]);
+
+  const handleNotifToggle = async (key: keyof NotificationPreferences, value: boolean) => {
+    if (!user) return;
+    
+    const newPrefs = { ...notifPrefs, [key]: value };
+    setNotifPrefs(newPrefs);
+    setNotifSaving(true);
+
+    // Check if preferences exist
+    const { data: existing } = await supabase
+      .from("notification_preferences")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    let error;
+    if (existing) {
+      // Update existing
+      ({ error } = await supabase
+        .from("notification_preferences")
+        .update(newPrefs)
+        .eq("user_id", user.id));
+    } else {
+      // Insert new
+      ({ error } = await supabase
+        .from("notification_preferences")
+        .insert({ user_id: user.id, ...newPrefs }));
+    }
+
+    if (error) {
+      console.error("Error saving notification preferences:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save preferences.",
+        variant: "destructive",
+      });
+      // Revert on error
+      setNotifPrefs({ ...notifPrefs });
+    }
+    setNotifSaving(false);
+  };
 
   const handleSaveProfile = async () => {
     if (!user) return;
@@ -369,6 +454,97 @@ const Profile = () => {
                     </CardContent>
                   </Card>
                 ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Notification Settings */}
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5" />
+              Email Notifications
+            </CardTitle>
+            <CardDescription>
+              Manage how you receive email updates
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {notifLoading ? (
+              <div className="space-y-4">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between py-3 border-b">
+                  <div className="flex items-center gap-3">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">Analysis Complete</p>
+                      <p className="text-sm text-muted-foreground">
+                        Get notified when your resume analysis is ready
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={notifPrefs.email_analysis_complete}
+                    onCheckedChange={(checked) => handleNotifToggle("email_analysis_complete", checked)}
+                    disabled={notifSaving}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between py-3 border-b">
+                  <div className="flex items-center gap-3">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">Weekly Summary</p>
+                      <p className="text-sm text-muted-foreground">
+                        Receive a weekly digest of your progress
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={notifPrefs.email_weekly_summary}
+                    onCheckedChange={(checked) => handleNotifToggle("email_weekly_summary", checked)}
+                    disabled={notifSaving}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between py-3 border-b">
+                  <div className="flex items-center gap-3">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">Course Recommendations</p>
+                      <p className="text-sm text-muted-foreground">
+                        Get notified about new courses matching your skill gaps
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={notifPrefs.email_course_recommendations}
+                    onCheckedChange={(checked) => handleNotifToggle("email_course_recommendations", checked)}
+                    disabled={notifSaving}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between py-3">
+                  <div className="flex items-center gap-3">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">Internship Alerts</p>
+                      <p className="text-sm text-muted-foreground">
+                        Receive alerts for new internship opportunities
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={notifPrefs.email_internship_alerts}
+                    onCheckedChange={(checked) => handleNotifToggle("email_internship_alerts", checked)}
+                    disabled={notifSaving}
+                  />
+                </div>
               </div>
             )}
           </CardContent>

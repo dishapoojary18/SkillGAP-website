@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      notification_preferences: {
+        Row: {
+          created_at: string
+          email_analysis_complete: boolean
+          email_course_recommendations: boolean
+          email_internship_alerts: boolean
+          email_weekly_summary: boolean
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_analysis_complete?: boolean
+          email_course_recommendations?: boolean
+          email_internship_alerts?: boolean
+          email_weekly_summary?: boolean
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email_analysis_complete?: boolean
+          email_course_recommendations?: boolean
+          email_internship_alerts?: boolean
+          email_weekly_summary?: boolean
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
