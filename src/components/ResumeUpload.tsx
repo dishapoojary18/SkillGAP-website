@@ -110,17 +110,44 @@ const ResumeUpload = ({ onUpload, selectedRole }: ResumeUploadProps) => {
       // Extract text from file
       const resumeText = await extractTextFromFile(file);
 
-      // Call the edge function
+      // Ensure we have a valid access token (avoid "Invalid JWT" when session is stale)
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      const accessToken = session?.access_token;
+      if (!accessToken) {
+        toast.error("Your session expired. Please log in again.");
+        // Clear any stale auth state
+        await supabase.auth.signOut();
+        navigate("/login");
+        setIsUploading(false);
+        return;
+      }
+
+      // Call the backend function (requires JWT)
       const { data, error } = await supabase.functions.invoke("analyze-resume", {
-        body: { 
+        body: {
           resumeText,
-          targetRole: selectedRole 
+          targetRole: selectedRole,
+        },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
         },
       });
 
       if (error) {
         console.error("Analysis error:", error);
-        toast.error(error.message || "Failed to analyze resume");
+
+        const msg = error.message || "Failed to analyze resume";
+        if (msg.includes("Invalid JWT") || msg.includes("returned 401")) {
+          toast.error("Your session is invalid. Please log in again.");
+          await supabase.auth.signOut();
+          navigate("/login");
+        } else {
+          toast.error(msg);
+        }
+
         setIsUploading(false);
         return;
       }
