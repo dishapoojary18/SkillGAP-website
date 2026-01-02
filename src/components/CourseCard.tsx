@@ -2,6 +2,14 @@ import { motion } from "framer-motion";
 import { ExternalLink, Star, Clock, Users } from "lucide-react";
 import { Button } from "./ui/button";
 
+// Import local platform logos
+import logoUdemy from "@/assets/logo-udemy.png";
+import logoCoursera from "@/assets/logo-coursera.png";
+import logoLinkedIn from "@/assets/logo-linkedin.png";
+import logoEdx from "@/assets/logo-edx.png";
+import logoPluralsight from "@/assets/logo-pluralsight.png";
+import logoSkillshare from "@/assets/logo-skillshare.png";
+
 interface CourseCardProps {
   title: string;
   provider: string;
@@ -31,18 +39,20 @@ const CourseCard = ({
     "LinkedIn Learning": "bg-sky-600",
     edX: "bg-red-500",
     Pluralsight: "bg-pink-600",
+    Skillshare: "bg-teal-500",
+    Udacity: "bg-blue-600",
   };
 
-  // Use initials instead of external logos to avoid CORS/hotlinking issues
-  const providerInitials: Record<string, string> = {
-    Udemy: "U",
-    Coursera: "C",
-    "LinkedIn Learning": "Li",
-    edX: "eX",
-    Pluralsight: "P",
-    Skillshare: "S",
-    Udacity: "Ud",
+  const providerLogos: Record<string, string> = {
+    Udemy: logoUdemy,
+    Coursera: logoCoursera,
+    "LinkedIn Learning": logoLinkedIn,
+    edX: logoEdx,
+    Pluralsight: logoPluralsight,
+    Skillshare: logoSkillshare,
   };
+
+  const logo = providerLogos[provider];
 
   return (
     <motion.div
@@ -52,20 +62,35 @@ const CourseCard = ({
       className="group glass-card overflow-hidden hover:shadow-lg transition-all duration-300"
     >
       <div className="relative h-40 overflow-hidden bg-gradient-to-br from-muted/50 to-muted">
-        {/* Platform initial as background */}
+        {/* Platform logo as background */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
-            <span className="text-3xl font-bold text-primary/30">
-              {providerInitials[provider] || provider.charAt(0)}
-            </span>
-          </div>
+          {logo ? (
+            <img
+              src={logo}
+              alt={`${provider} logo`}
+              className="w-20 h-20 object-contain opacity-30"
+            />
+          ) : (
+            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+              <span className="text-3xl font-bold text-primary/30">
+                {provider.charAt(0)}
+              </span>
+            </div>
+          )}
         </div>
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 to-transparent" />
         <div
-          className={`absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-medium text-primary-foreground ${
+          className={`absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-medium text-primary-foreground flex items-center gap-2 ${
             providerColors[provider] || "bg-primary"
           }`}
         >
+          {logo && (
+            <img
+              src={logo}
+              alt=""
+              className="w-4 h-4 object-contain brightness-0 invert"
+            />
+          )}
           {provider}
         </div>
         <div className="absolute bottom-3 left-3 px-2 py-1 rounded-lg bg-background/90 text-xs font-medium text-primary">
@@ -81,7 +106,7 @@ const CourseCard = ({
         <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
           <div className="flex items-center gap-1">
             <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-            <span>{rating}</span>
+            <span>{typeof rating === 'number' ? rating.toFixed(1) : rating}</span>
           </div>
           <div className="flex items-center gap-1">
             <Clock className="w-4 h-4" />
