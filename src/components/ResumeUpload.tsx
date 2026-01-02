@@ -7,6 +7,10 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import * as pdfjsLib from "pdfjs-dist";
+
+// Set up PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 interface ResumeUploadProps {
   onUpload: (file: File) => void;
@@ -40,19 +44,50 @@ const ResumeUpload = ({ onUpload, selectedRole }: ResumeUploadProps) => {
     maxSize: 5 * 1024 * 1024, // 5MB
   });
 
+  const extractTextFromPdf = async (file: File): Promise<string> => {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    
+    let fullText = "";
+    
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items
+        .map((item: unknown) => (item as { str: string }).str)
+        .join(" ");
+      fullText += pageText + "\n";
+    }
+    
+    return fullText.trim();
+  };
+
   const extractTextFromFile = async (file: File): Promise<string> => {
     // For text files, read directly
     if (file.type === "text/plain") {
       return await file.text();
     }
     
-    // For PDF/DOC files, we'll read as text (simplified - in production you'd use a PDF parser)
-    // For now, we'll read the file as text and let the AI handle it
+    // For PDF files, use PDF.js
+    if (file.type === "application/pdf") {
+      try {
+        const text = await extractTextFromPdf(file);
+        if (text && text.length > 0) {
+          return text;
+        }
+        throw new Error("No text extracted from PDF");
+      } catch (error) {
+        console.error("PDF extraction error:", error);
+        toast.error("Could not extract text from PDF. Try a text-based PDF.");
+        return `[Resume file: ${file.name}]`;
+      }
+    }
+    
+    // For DOC/DOCX files, try basic text extraction
     try {
       const text = await file.text();
       return text;
     } catch {
-      // If text extraction fails, return placeholder
       return `[Resume file: ${file.name}]`;
     }
   };
