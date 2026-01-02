@@ -19,6 +19,7 @@ import {
   Settings,
   Upload,
 } from "lucide-react";
+import { toast } from "sonner";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -26,7 +27,7 @@ const Navbar = () => {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, profile, isAuthenticated, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
   const isActive = (path: string) => location.pathname === path;
@@ -46,11 +47,15 @@ const Navbar = () => {
     { name: "Ratings", path: "/ratings" },
   ];
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await signOut();
     setIsProfileDropdownOpen(false);
+    toast.success("Logged out successfully");
     navigate("/dashboard");
   };
+
+  const displayName = profile?.full_name || user?.email?.split("@")[0] || "User";
+  const displayEmail = user?.email || "";
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 px-4 py-3">
@@ -167,10 +172,10 @@ const Navbar = () => {
               >
                 <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-secondary transition-colors">
                   <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                    {user.avatar ? (
+                    {profile?.avatar_url ? (
                       <img
-                        src={user.avatar}
-                        alt={user.name}
+                        src={profile.avatar_url}
+                        alt={displayName}
                         className="w-8 h-8 rounded-full object-cover"
                       />
                     ) : (
@@ -178,7 +183,7 @@ const Navbar = () => {
                     )}
                   </div>
                   <span className="text-sm font-medium text-foreground">
-                    {user.name}
+                    {displayName}
                   </span>
                   <ChevronDown className="w-4 h-4 text-muted-foreground" />
                 </button>
@@ -193,8 +198,8 @@ const Navbar = () => {
                       className="absolute top-full right-0 mt-2 w-56 glass-card p-2 shadow-lg"
                     >
                       <div className="px-4 py-3 border-b border-border mb-2">
-                        <p className="font-medium text-foreground">{user.name}</p>
-                        <p className="text-sm text-muted-foreground">{user.email}</p>
+                        <p className="font-medium text-foreground">{displayName}</p>
+                        <p className="text-sm text-muted-foreground">{displayEmail}</p>
                       </div>
                       <Link
                         to="/profile"
@@ -288,8 +293,8 @@ const Navbar = () => {
                       <User className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                      <p className="font-medium text-foreground">{user.name}</p>
-                      <p className="text-sm text-muted-foreground">{user.email}</p>
+                      <p className="font-medium text-foreground">{displayName}</p>
+                      <p className="text-sm text-muted-foreground">{displayEmail}</p>
                     </div>
                   </div>
                 </div>

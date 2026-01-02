@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,14 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { signUp, isAuthenticated } = useAuth();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/dashboard");
+    }
+  }, [isAuthenticated, navigate]);
 
   const passwordRequirements = [
     { text: "At least 8 characters", met: password.length >= 8 },
@@ -24,13 +31,27 @@ const Signup = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!passwordRequirements.every((r) => r.met)) {
+      toast.error("Please meet all password requirements.");
+      return;
+    }
+
     setIsLoading(true);
 
-    // Simulate signup
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    const { error } = await signUp(email, password, name);
 
-    login(email, name);
-    toast.success("Account created successfully!");
+    if (error) {
+      if (error.message.includes("already registered")) {
+        toast.error("This email is already registered. Please sign in instead.");
+      } else {
+        toast.error(error.message);
+      }
+      setIsLoading(false);
+      return;
+    }
+
+    toast.success("Account created successfully! Welcome to SkillGAP!");
     setIsLoading(false);
     navigate("/dashboard");
   };
