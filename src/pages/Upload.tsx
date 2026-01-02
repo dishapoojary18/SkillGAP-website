@@ -50,18 +50,18 @@ const Upload = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="flex items-center justify-center gap-4 mb-12"
+            className="flex items-center justify-center gap-4 mb-12 flex-wrap"
           >
             <div className={`flex items-center gap-2 px-4 py-2 rounded-full ${selectedRole ? 'bg-primary text-primary-foreground' : 'bg-primary/10 text-primary'}`}>
               <Target className="w-4 h-4" />
               <span className="text-sm font-medium">1. Select Role</span>
             </div>
-            <ArrowRight className="w-4 h-4 text-muted-foreground" />
+            <ArrowRight className="w-4 h-4 text-muted-foreground hidden sm:block" />
             <div className={`flex items-center gap-2 px-4 py-2 rounded-full ${uploadedFile ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}>
               <FileText className="w-4 h-4" />
               <span className="text-sm font-medium">2. Upload Resume</span>
             </div>
-            <ArrowRight className="w-4 h-4 text-muted-foreground" />
+            <ArrowRight className="w-4 h-4 text-muted-foreground hidden sm:block" />
             <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-secondary text-muted-foreground">
               <Sparkles className="w-4 h-4" />
               <span className="text-sm font-medium">3. Get Analysis</span>
@@ -107,7 +107,7 @@ const Upload = () => {
                   Step 2: Upload Your Resume
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  We support PDF, DOC, and DOCX formats up to 5MB
+                  We support PDF, DOC, DOCX, and TXT formats up to 5MB
                 </p>
               </div>
             </div>
@@ -116,7 +116,12 @@ const Upload = () => {
                 Please select a target role first to continue
               </div>
             )}
-            {selectedRole && <ResumeUpload onUpload={handleFileUpload} />}
+            {selectedRole && (
+              <ResumeUpload 
+                onUpload={handleFileUpload} 
+                selectedRole={selectedRole}
+              />
+            )}
           </motion.div>
 
           {/* Selected Role Display */}
