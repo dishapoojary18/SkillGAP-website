@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,9 +7,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { User, FileText, Calendar, Target, TrendingUp } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { User, FileText, Calendar, Target, TrendingUp, Pencil, Camera, Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
 
 interface ResumeAnalysis {
   id: string;
@@ -22,14 +32,31 @@ interface ResumeAnalysis {
 const Profile = () => {
   const { user, profile, isLoading: authLoading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   const [analyses, setAnalyses] = useState<ResumeAnalysis[]>([]);
   const [analysesLoading, setAnalysesLoading] = useState(true);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [localAvatarUrl, setLocalAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       navigate("/login");
     }
   }, [authLoading, isAuthenticated, navigate]);
+
+  useEffect(() => {
+    if (profile?.full_name) {
+      setEditName(profile.full_name);
+    }
+    if (profile?.avatar_url) {
+      setLocalAvatarUrl(profile.avatar_url);
+    }
+  }, [profile]);
 
   useEffect(() => {
     const fetchAnalyses = async () => {
@@ -53,6 +80,106 @@ const Profile = () => {
       fetchAnalyses();
     }
   }, [user]);
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    
+    setSaving(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ full_name: editName.trim() })
+      .eq("user_id", user.id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Profile updated successfully!",
+      });
+      setEditDialogOpen(false);
+      // Refresh the page to get updated profile
+      window.location.reload();
+    }
+    setSaving(false);
+  };
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Invalid file",
+        description: "Please select an image file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please select an image under 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadingAvatar(true);
+
+    try {
+      const fileExt = file.name.split(".").pop();
+      const filePath = `${user.id}/avatar.${fileExt}`;
+
+      // Upload to storage
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(filePath);
+
+      const avatarUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+
+      // Update profile with new avatar URL
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: avatarUrl })
+        .eq("user_id", user.id);
+
+      if (updateError) throw updateError;
+
+      setLocalAvatarUrl(avatarUrl);
+      toast({
+        title: "Success",
+        description: "Avatar updated successfully!",
+      });
+    } catch (error) {
+      console.error("Error uploading avatar:", error);
+      toast({
+        title: "Error",
+        description: "Failed to upload avatar. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   if (authLoading) {
     return (
@@ -79,23 +206,83 @@ const Profile = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="container mx-auto px-4 py-8 max-w-4xl pt-24">
         {/* Profile Card */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Profile Information
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Profile Information
+              </CardTitle>
+              <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Pencil className="h-4 w-4" />
+                    Edit
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Edit Profile</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Full Name</Label>
+                      <Input
+                        id="name"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        placeholder="Enter your full name"
+                      />
+                    </div>
+                    <Button
+                      onClick={handleSaveProfile}
+                      disabled={saving || !editName.trim()}
+                      className="w-full"
+                    >
+                      {saving ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        "Save Changes"
+                      )}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-6">
-              <Avatar className="h-20 w-20">
-                <AvatarImage src={profile?.avatar_url || undefined} />
-                <AvatarFallback className="text-xl bg-primary text-primary-foreground">
-                  {getInitials(profile?.full_name)}
-                </AvatarFallback>
-              </Avatar>
+              <div className="relative group">
+                <Avatar className="h-20 w-20">
+                  <AvatarImage src={localAvatarUrl || undefined} />
+                  <AvatarFallback className="text-xl bg-primary text-primary-foreground">
+                    {getInitials(profile?.full_name)}
+                  </AvatarFallback>
+                </Avatar>
+                <button
+                  onClick={handleAvatarClick}
+                  disabled={uploadingAvatar}
+                  className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                >
+                  {uploadingAvatar ? (
+                    <Loader2 className="h-6 w-6 text-white animate-spin" />
+                  ) : (
+                    <Camera className="h-6 w-6 text-white" />
+                  )}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                />
+              </div>
               <div className="space-y-1">
                 <h2 className="text-2xl font-semibold">
                   {profile?.full_name || "User"}
