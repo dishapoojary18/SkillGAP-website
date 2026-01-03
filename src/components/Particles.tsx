@@ -1,4 +1,4 @@
-import { useEffect, useRef, forwardRef } from "react";
+import { useEffect, useRef, forwardRef, useState } from "react";
 
 interface Particle {
   x: number;
@@ -21,6 +21,11 @@ const Particles = forwardRef<HTMLCanvasElement, ParticlesProps>(
     const particlesRef = useRef<Particle[]>([]);
     const animationRef = useRef<number>();
     const mouseRef = useRef({ x: 0, y: 0 });
+    
+    // Reduce particles on mobile for better performance
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    const adjustedQuantity = isMobile ? Math.floor(quantity * 0.4) : quantity;
+    const connectionDistance = isMobile ? 80 : 120;
 
     useEffect(() => {
       const canvas = canvasRef.current;
@@ -36,7 +41,7 @@ const Particles = forwardRef<HTMLCanvasElement, ParticlesProps>(
 
       const createParticles = () => {
         particlesRef.current = [];
-        for (let i = 0; i < quantity; i++) {
+        for (let i = 0; i < adjustedQuantity; i++) {
           particlesRef.current.push({
             x: Math.random() * canvas.width,
             y: Math.random() * canvas.height,
@@ -66,21 +71,23 @@ const Particles = forwardRef<HTMLCanvasElement, ParticlesProps>(
           ctx.fillStyle = `rgba(${color}, ${particle.opacity})`;
           ctx.fill();
 
-          // Draw connections
-          particlesRef.current.slice(i + 1).forEach((otherParticle) => {
-            const dx = particle.x - otherParticle.x;
-            const dy = particle.y - otherParticle.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
+          // Draw connections (skip on very small screens for performance)
+          if (!isMobile || i % 2 === 0) {
+            particlesRef.current.slice(i + 1).forEach((otherParticle) => {
+              const dx = particle.x - otherParticle.x;
+              const dy = particle.y - otherParticle.y;
+              const distance = Math.sqrt(dx * dx + dy * dy);
 
-            if (distance < 120) {
-              ctx.beginPath();
-              ctx.moveTo(particle.x, particle.y);
-              ctx.lineTo(otherParticle.x, otherParticle.y);
-              ctx.strokeStyle = `rgba(${color}, ${0.15 * (1 - distance / 120)})`;
-              ctx.lineWidth = 0.5;
-              ctx.stroke();
-            }
-          });
+              if (distance < connectionDistance) {
+                ctx.beginPath();
+                ctx.moveTo(particle.x, particle.y);
+                ctx.lineTo(otherParticle.x, otherParticle.y);
+                ctx.strokeStyle = `rgba(${color}, ${0.15 * (1 - distance / connectionDistance)})`;
+                ctx.lineWidth = 0.5;
+                ctx.stroke();
+              }
+            });
+          }
 
           // Mouse interaction
           const mouseDistance = Math.sqrt(
@@ -122,7 +129,7 @@ const Particles = forwardRef<HTMLCanvasElement, ParticlesProps>(
         window.removeEventListener("resize", resizeCanvas);
         window.removeEventListener("mousemove", handleMouseMove);
       };
-    }, [quantity, color]);
+    }, [adjustedQuantity, color, connectionDistance, isMobile]);
 
     return (
       <canvas
