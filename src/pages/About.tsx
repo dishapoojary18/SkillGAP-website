@@ -1,32 +1,28 @@
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import { Users, Target, Award, Heart } from "lucide-react";
-import teamDisha from "@/assets/team-disha.png";
-import teamMahi from "@/assets/team-mahi.png";
-import teamLikhitha from "@/assets/team-likhitha.png";
-import teamShreeja from "@/assets/team-shreeja.png";
 
 const About = () => {
   const team = [
     {
       name: "Disha",
       role: "Founder & CEO",
-      image: teamDisha,
+      image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop",
     },
     {
       name: "Mahi",
       role: "CTO",
-      image: teamMahi,
+      image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop",
     },
     {
       name: "Likhitha",
       role: "Head of AI",
-      image: teamLikhitha,
+      image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop",
     },
     {
       name: "Shreeja",
       role: "Product Lead",
-      image: teamShreeja,
+      image: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&h=200&fit=crop",
     },
   ];
 
