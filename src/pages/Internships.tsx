@@ -7,17 +7,6 @@ import { Search, MapPin, Filter, X } from "lucide-react";
 
 const allInternships = [
   {
-    id: "1",
-    title: "Software Engineering Intern",
-    company: "Google",
-    location: "Bangalore",
-    duration: "May - Aug 2025",
-    stipend: "₹1,50,000/mo",
-    logo: "https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/google.svg",
-    type: "On-site",
-    applyUrl: "https://www.google.com/about/careers/applications/jobs/results?q=intern&location=India",
-  },
-  {
     id: "2",
     title: "Software Engineering Intern",
     company: "Microsoft",
