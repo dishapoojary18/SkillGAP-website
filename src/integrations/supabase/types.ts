@@ -82,6 +82,7 @@ export type Database = {
           created_at: string
           id: string
           recommended_courses: Json | null
+          recommended_internships: Json | null
           resume_text: string | null
           role: string
           skill_gaps: Json | null
@@ -91,6 +92,7 @@ export type Database = {
           created_at?: string
           id?: string
           recommended_courses?: Json | null
+          recommended_internships?: Json | null
           resume_text?: string | null
           role: string
           skill_gaps?: Json | null
@@ -100,6 +102,7 @@ export type Database = {
           created_at?: string
           id?: string
           recommended_courses?: Json | null
+          recommended_internships?: Json | null
           resume_text?: string | null
           role?: string
           skill_gaps?: Json | null

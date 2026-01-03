@@ -372,12 +372,25 @@ const Analysis = () => {
             }))
           : [];
 
+        const recommendedInternships = Array.isArray(data.recommended_internships)
+          ? (data.recommended_internships as Array<{ title: string; company: string; location: string; duration: string; stipend: string; type: string; applyUrl?: string }>).map(ri => ({
+              title: ri.title,
+              company: ri.company,
+              location: ri.location,
+              duration: ri.duration,
+              stipend: ri.stipend,
+              type: ri.type as "Remote" | "Hybrid" | "On-site",
+              applyUrl: ri.applyUrl,
+            }))
+          : [];
+
         setFetchedAnalysis({
           summary: `Analysis for ${data.role} role`,
           matchScore: 70,
           skillGaps,
           existingStrengths: [],
           recommendedCourses,
+          recommendedInternships,
           actionPlan: [],
         });
       }
