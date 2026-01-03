@@ -15,7 +15,7 @@ const allInternships = [
     stipend: "₹1,50,000/mo",
     logo: "https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/google.svg",
     type: "On-site",
-    applyUrl: "https://careers.google.com/",
+    applyUrl: "https://www.google.com/about/careers/applications/jobs/results?q=intern&location=India",
   },
   {
     id: "2",

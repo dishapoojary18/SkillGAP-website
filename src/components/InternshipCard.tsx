@@ -83,7 +83,14 @@ const InternshipCard = ({
   
   const handleApply = () => {
     const url = applyUrl || getCompanyCareerUrl(company, title);
-    window.open(url, "_blank", "noopener,noreferrer");
+    // Create a temporary anchor element to avoid popup blockers
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
