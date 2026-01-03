@@ -76,7 +76,8 @@ Your analysis should be thorough, practical, and encouraging. Focus on:
 1. Identifying missing skills that are essential for the target role
 2. Highlighting skills that need improvement
 3. Recommending specific courses or certifications
-4. Providing actionable next steps
+4. Recommending REAL internship opportunities at actual companies that hire for this role
+5. Providing actionable next steps
 
 Always return your response in valid JSON format with the following structure:
 {
@@ -98,10 +99,21 @@ Always return your response in valid JSON format with the following structure:
   "recommendedCourses": [
     {
       "title": "Course name",
-      "platform": "Coursera" | "Udemy" | "LinkedIn Learning" | "edX" | "Other",
+      "platform": "Coursera" | "Udemy" | "LinkedIn Learning" | "edX" | "Pluralsight",
       "skill": "Which skill gap this addresses",
       "estimatedDuration": "e.g., 4 weeks",
       "priority": "high" | "medium" | "low"
+    }
+  ],
+  "recommendedInternships": [
+    {
+      "title": "Internship title matching the target role exactly",
+      "company": "Real company name that actually hires for this role (e.g., Google, Microsoft, Amazon, Flipkart, Swiggy, Zomato, TCS, Infosys, Wipro, Accenture, etc.)",
+      "location": "City name in India",
+      "duration": "3-6 months",
+      "stipend": "₹15,000-₹50,000/mo (realistic range)",
+      "type": "Remote" | "Hybrid" | "On-site",
+      "applyUrl": "Career page URL of the company"
     }
   ],
   "actionPlan": [
@@ -111,7 +123,13 @@ Always return your response in valid JSON format with the following structure:
       "timeframe": "e.g., Next 2 weeks"
     }
   ]
-}`;
+}
+
+IMPORTANT for recommendedInternships:
+- Only recommend internships that EXACTLY match the target role (e.g., for "Data Scientist" role, recommend "Data Science Intern" not "Software Engineer Intern")
+- Use REAL company names that are known to hire for this specific role
+- Include 3-5 relevant internships
+- Make sure the internship title directly relates to the target role`;
 
     const userPrompt = `Analyze the following resume for the target role of "${targetRole}":
 
