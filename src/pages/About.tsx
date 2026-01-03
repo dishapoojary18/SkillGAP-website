@@ -157,7 +157,8 @@ const About = () => {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.3 + index * 0.1 }}
-                  className="glass-card p-6 text-center group"
+                  whileHover={{ scale: 1.05 }}
+                  className="glass-card p-6 text-center group cursor-pointer transition-shadow duration-300 hover:shadow-[0_0_30px_rgba(var(--primary)/0.3)]"
                 >
                   <div className="w-24 h-24 mx-auto rounded-full overflow-hidden mb-4 ring-4 ring-primary/20 group-hover:ring-primary/40 transition-all">
                     <img
