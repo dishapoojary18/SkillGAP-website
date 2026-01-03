@@ -168,6 +168,7 @@ const ResumeUpload = ({ onUpload, selectedRole }: ResumeUploadProps) => {
             resume_text: resumeText.substring(0, 10000), // Limit stored text
             skill_gaps: data.analysis.skillGaps || [],
             recommended_courses: data.analysis.recommendedCourses || [],
+            recommended_internships: data.analysis.recommendedInternships || [],
           });
 
         if (saveError) {
