@@ -44,12 +44,23 @@ interface RecommendedCourse {
   priority: "high" | "medium" | "low";
 }
 
+interface RecommendedInternship {
+  title: string;
+  company: string;
+  location: string;
+  duration: string;
+  stipend: string;
+  type: "Remote" | "Hybrid" | "On-site";
+  applyUrl?: string;
+}
+
 interface AnalysisResult {
   summary: string;
   matchScore: number;
   skillGaps: SkillGap[];
   existingStrengths: Array<{ skill: string; relevance: string }>;
   recommendedCourses: RecommendedCourse[];
+  recommendedInternships?: RecommendedInternship[];
   actionPlan: Array<{ step: number; action: string; timeframe: string }>;
 }
 
@@ -121,26 +132,27 @@ const defaultCourses = [
   },
 ];
 
-const matchingInternships = [
+// Default internships for fallback - will be replaced by AI-generated ones
+const getDefaultInternships = (role: string) => [
   {
     id: "1",
-    title: "React Developer Intern",
-    company: "Flipkart",
-    location: "Bangalore",
+    title: `${role} Intern`,
+    company: "TCS",
+    location: "Mumbai",
     duration: "6 months",
-    stipend: "₹40,000/mo",
+    stipend: "₹25,000/mo",
     logo: "https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?w=100&h=100&fit=crop",
-    type: "Remote",
+    type: "Hybrid" as const,
   },
   {
     id: "2",
-    title: "Frontend Intern",
-    company: "Swiggy",
-    location: "Mumbai",
+    title: `${role} Trainee`,
+    company: "Infosys",
+    location: "Bangalore",
     duration: "4 months",
-    stipend: "₹35,000/mo",
+    stipend: "₹20,000/mo",
     logo: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=100&h=100&fit=crop",
-    type: "Hybrid",
+    type: "On-site" as const,
   },
 ];
 
@@ -400,6 +412,19 @@ const Analysis = () => {
     url: getPlatformSearchUrl(course.platform, course.title),
     skill: course.skill,
   })) || defaultCourses;
+
+  // Transform AI-generated internships or use defaults
+  const matchingInternships = analysisData?.recommendedInternships?.map((internship, index) => ({
+    id: String(index + 1),
+    title: internship.title,
+    company: internship.company,
+    location: internship.location,
+    duration: internship.duration,
+    stipend: internship.stipend,
+    logo: `https://ui-avatars.com/api/?name=${encodeURIComponent(internship.company)}&background=random&size=100`,
+    type: internship.type,
+    applyUrl: internship.applyUrl,
+  })) || getDefaultInternships(targetRole);
 
   const overallScore = analysisData?.matchScore || 65;
   const highPriorityCount = skillGaps.filter((s) => s.priority === "high").length;
