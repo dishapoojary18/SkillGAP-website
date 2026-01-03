@@ -1,9 +1,11 @@
+import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { ArrowRight, Sparkles } from "lucide-react";
 import Particles from "./Particles";
-const LandingPage = () => {
+
+const LandingPage = forwardRef<HTMLDivElement>((_, ref) => {
   const navigate = useNavigate();
 
   const handleEnter = () => {
@@ -11,7 +13,7 @@ const LandingPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-background">
+    <div ref={ref} className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-background">
       <Particles quantity={80} color="139, 92, 246" />
       
       {/* Background Elements */}
@@ -190,6 +192,8 @@ const LandingPage = () => {
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
     </div>
   );
-};
+});
+
+LandingPage.displayName = "LandingPage";
 
 export default LandingPage;
