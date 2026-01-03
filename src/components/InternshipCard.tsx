@@ -95,12 +95,19 @@ const InternshipCard = ({
         className="glass-card p-4 hover:shadow-lg transition-all duration-300 group"
       >
         <div className="flex gap-4">
-          <div className="w-14 h-14 rounded-xl bg-secondary flex items-center justify-center shrink-0 overflow-hidden">
+          <div className="w-14 h-14 rounded-xl bg-secondary flex items-center justify-center shrink-0 overflow-hidden p-2">
             {logo ? (
-              <img src={logo} alt={company} className="w-full h-full object-cover" />
-            ) : (
-              <Building2 className="w-6 h-6 text-primary" />
-            )}
+              <img 
+                src={logo} 
+                alt={company} 
+                className="w-full h-full object-contain dark:invert" 
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.parentElement?.querySelector('.fallback-icon')?.classList.remove('hidden');
+                }}
+              />
+            ) : null}
+            <Building2 className={`w-6 h-6 text-primary fallback-icon ${logo ? 'hidden' : ''}`} />
           </div>
 
           <div className="flex-1 min-w-0">
@@ -159,12 +166,19 @@ const InternshipCard = ({
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <div className="flex items-center gap-4 mb-2">
-              <div className="w-16 h-16 rounded-xl bg-secondary flex items-center justify-center shrink-0 overflow-hidden">
+              <div className="w-16 h-16 rounded-xl bg-secondary flex items-center justify-center shrink-0 overflow-hidden p-2">
                 {logo ? (
-                  <img src={logo} alt={company} className="w-full h-full object-cover" />
-                ) : (
-                  <Building2 className="w-8 h-8 text-primary" />
-                )}
+                  <img 
+                    src={logo} 
+                    alt={company} 
+                    className="w-full h-full object-contain dark:invert"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.parentElement?.querySelector('.fallback-icon')?.classList.remove('hidden');
+                    }}
+                  />
+                ) : null}
+                <Building2 className={`w-8 h-8 text-primary fallback-icon ${logo ? 'hidden' : ''}`} />
               </div>
               <div>
                 <DialogTitle className="text-left">{title}</DialogTitle>
