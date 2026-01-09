@@ -292,7 +292,7 @@ const Dashboard = () => {
             SkillGAP
           </span>
           <p className="text-sm text-muted-foreground">
-            © 2024 SkillGAP. All rights reserved.
+            © 2026 SkillGAP. All rights reserved.
           </p>
         </div>
       </footer>

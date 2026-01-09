@@ -6,7 +6,7 @@ import { Search } from "lucide-react";
 
 const allCourses = [
   {
-    title: "React - The Complete Guide 2024",
+    title: "React - The Complete Guide 2026",
     provider: "Udemy",
     rating: 4.8,
     duration: "40 hours",
