@@ -89,7 +89,7 @@ const About = () => {
                 solution.
               </p>
               <p>
-                Founded in 2023, we've already helped over 10,000 students
+                Founded in 2026, we've already helped over 10,000 students
                 identify their skill gaps and chart a clear path to their dream
                 careers. Our AI-powered platform analyzes resumes, maps skills
                 to industry requirements, and recommends personalized learning
